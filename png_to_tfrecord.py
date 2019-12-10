@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 import tensorflow as tf
 import os
-import random
-import numpy as np
-from PIL import Image
 import logging
 import matplotlib.pyplot as plt
 
@@ -11,22 +8,11 @@ slim = tf.contrib.slim
 
 # 输出类别
 NUM_CLASSES = 214
-
 # 图片大小
 IMAGE_SIZE = 64
 
-logger = logging.getLogger('HIT Chinese HandWriting Recognition')
-logger.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-logger.addHandler(ch)
-
-random.seed(0)
-
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = '2'
-
-
 def get_files(dirpath):
     ”“”
     获取文件相对路径和标签（非one-hot） 返回一个元组
