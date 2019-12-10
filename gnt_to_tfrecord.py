@@ -2,93 +2,92 @@
 #coding=utf-8
 import numpy as np
 import struct
-from PIL import Image
 import tensorflow as tf
 import os
-dstpath = '.'
-count = 0
-path = 'H:/苏统华的空间/94类字母样本for荟俨/'
-flag = 0
-image = []
-tag_code = []
-result = {}
-###################求总长度，保存到image_list中，num_shards为tfrecord的数目######################################
-for z in range(2, 3):
-    ###############生成字典###################
-    f = open(path+'lexicon94.txt', 'rb')
-    line = f.readline()
-    i = 0
-    while line:
-        result[struct.unpack('<H', line[:2])[0]] = i
-        i += 1
-        line = f.readline()
 
-    ff = path + str(z) + '.gnt'
-    f = open(ff, 'rb')
-    ###########################################
-    length = os.path.getsize(ff)
-    print('length:', length)
-    point = 0
-
-    while point < length:
-        count += 1
-
-        #print('f.read(4):', f.read(4))
-        #f.seek(-4, 1)
-        length_bytes = struct.unpack('<I', f.read(4))[0]
-        #print('length_bytes:', length_bytes)
-        point += 4
-        tag_code.append(f.read(2))
-        #print('tag_code: ', tag_code)
-        point += 2
-        width = struct.unpack('<H', f.read(2))[0]
-        #print('width: ', width)
-        point += 2
-        height = struct.unpack('<H', f.read(2))[0]
-        #print('height: ', height)
-        point += 2
-        image.append(f.read(width * height))
-        point += width * height
-        # if count == 6000000:
-        #     del tag_code[:]
-        #     del image[:]
-        #     #print(tag_code[0])
-        #     #print(image[0])
-        # if count <= 6000000:
-        #      #print('count continue : ', count)
-        #      continue
-        # if count >= 9000000:
-        #     break
-    f.close()
-#print('count - 6000000 = ', count-6000000)
-#print(tag_code[0], image[0])
-#print(image[count-1])
-print('图片数:', count)
-length_per_shard = 10000  # 每个记录文件的样本长度
-#num_shards = int(np.ceil((count-6000000) / length_per_shard))
-num_shards = int(np.ceil(count / length_per_shard))
-print('numshards:', num_shards)
-#################################################################################################################
-
-for index in range(num_shards):
+def generate_tf():
+    """
+        Convert gnt to tfrecod.
+        Args:
+            dstpath: The output path of the generate tfrecord.
+            count: The image count of the whole gnt file.
+            path: The root path of files.
+            image: To save the image info.
+            tag_code: To save the label info.
+            height_global: To save the height of the image.
+            width_global: To save the witdh of the image.
+            result: To save the one-hot code of the label.
+            train_data: To determine the output tfrecord name.
+    """
+    # Parameters
+    dstpath = '.'
+    count = 0
+    path = 'G:/华为生态数据GNT格式/'
+    flag = 0
+    image = []
+    tag_code = []
+    height_global = []
+    width_global = []
+    result = {}
     train_data = True
-    if train_data:
-        filename = os.path.join(dstpath, 'train_data.tfrecord-%.5d-of-%.5d' % (index, num_shards))
-    else:
-        filename = os.path.join(dstpath, 'test_data.tfrecord-%.5d-of-%.5d' % (index, num_shards))
-    #print(filename)
-    writer = tf.python_io.TFRecordWriter(filename)
-    print('index = ', index)
-    #print(index*length_per_shard, (index+1)*length_per_shard)
-    for x in range(index*length_per_shard, (index+1)*length_per_shard):
-        # 读取图像
-        #print(x)
-        if x >= count:
-            break
-        example = tf.train.Example(features=tf.train.Features(feature={
-            'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image[x]])),
-            'label': tf.train.Feature(
-                int64_list=tf.train.Int64List(value=[result[struct.unpack('<H', tag_code[x])[0]]]))}))
-        # print(result[struct.unpack('<H', tag_code[x])[0]])
-        serialized = example.SerializeToString()
-        writer.write(serialized)
+
+    for z in range(0, 1):
+        # Generate the dictionary
+        f = open(path+'lexicon3755.txt', 'rb')
+        line = f.readline()
+        i = 0
+        while line:
+            result[struct.unpack('<H', line[:2])[0]] = i
+            i += 1
+            line = f.readline()
+
+        ff = path + str(z) + '.gnt'
+        f = open(ff, 'rb')
+        length = os.path.getsize(ff)
+        print('length:', length)
+        point = 0
+
+        while point < length:
+            count += 1
+            length_bytes = struct.unpack('<I', f.read(4))[0]
+            point += 4
+            tag_code.append(f.read(2))
+            point += 2
+            width = struct.unpack('<H', f.read(2))[0]
+            width_global.append(width)
+            point += 2
+            height = struct.unpack('<H', f.read(2))[0]
+            height_global.append(height)
+            point += 2
+            image.append(f.read(width * height))
+            point += width * height
+        f.close()
+
+    print('pic count:', count)
+    length_per_shard = 100000  # The length of every tfrecord
+    num_shards = int(np.ceil(count / length_per_shard))
+    print('numshards:', num_shards)
+
+    for index in range(num_shards):
+        if train_data:
+            filename = os.path.join(dstpath, 'train_data.tfrecord-%.5d-of-%.5d' % (index, num_shards))
+        else:
+            filename = os.path.join(dstpath, 'test_data.tfrecord-%.5d-of-%.5d' % (index, num_shards))
+        writer = tf.python_io.TFRecordWriter(filename)
+        print('index = ', index)
+        for x in range(index*length_per_shard, (index+1)*length_per_shard):
+            # Read the image
+            if x >= count:
+                break
+            example = tf.train.Example(features=tf.train.Features(feature={
+                'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image[x]])),
+                'label': tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=[result[struct.unpack('<H', tag_code[x])[0]]])),
+                'height': tf.train.Feature(int64_list=tf.train.Int64List(value=[height_global[x]])),
+                'width': tf.train.Feature(int64_list=tf.train.Int64List(value=[width_global[x]]))
+            }))
+            serialized = example.SerializeToString()
+            writer.write(serialized)
+
+if __name__ == '__main__':
+    generate_tf()
