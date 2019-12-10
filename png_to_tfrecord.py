@@ -12,7 +12,7 @@ slim = tf.contrib.slim
 # 输出类别
 NUM_CLASSES = 214
 
-# 获取图片大小
+# 图片大小
 IMAGE_SIZE = 64
 
 logger = logging.getLogger('HIT Chinese HandWriting Recognition')
@@ -28,12 +28,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 
 
 def get_files(dirpath):
-    '''
+    ”“”
     获取文件相对路径和标签（非one-hot） 返回一个元组
     args：
         dirpath:数据所在的目录，记作父目录，
                 假设有10000类数据，则父目录下有10000个子目录，每个子目录存放着对应的图片
-    '''
+    “”“
     image_list = []
     label_list = []
 
@@ -65,11 +65,10 @@ def get_files(dirpath):
     random.shuffle([images, labels])
 
     print('样本长度为:', len(images))
-    #print(images[0:100], labels[0:100])
     return images, labels
 
 def WriteTFRecord(image_list, label_list, dstpath, train_data, IMAGE_HEIGHT=64, IMAGE_WIDTH=64):
-    '''
+    ”“”
     把指定目录下的数据写入同一个TFRecord格式文件中
     args:
         dirpath:数据所在的目录，记作父目录
@@ -78,7 +77,7 @@ def WriteTFRecord(image_list, label_list, dstpath, train_data, IMAGE_HEIGHT=64, 
         train_data:表示传入的文件是不是训练集文件所在的路径
         IMAGE_HEIGHT
         IMAGE_WIDTH
-    '''
+    “”“
     if not os.path.isdir(dstpath):
         os.mkdir(dstpath)
     # 获取所有数据文件路径，以及对应标签
@@ -112,9 +111,7 @@ def WriteTFRecord(image_list, label_list, dstpath, train_data, IMAGE_HEIGHT=64, 
             img_origin = Image.open(img_path)
             img = img_origin.resize((IMAGE_HEIGHT, IMAGE_WIDTH))
             #img = img.convert("RGB")
-            # img = img_origin.resize(IMAGE_HEIGHT, IMAGE_WIDTH)
             image = img.tobytes()
-            #image = img_origin.tobytes()
             example = tf.train.Example(features=tf.train.Features(feature={
                 'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image])),
                 'label': tf.train.Feature(int64_list=tf.train.Int64List(value=[label]))}))
@@ -184,56 +181,14 @@ def testImage():
                 break
             else:
                 train_images_batch, train_labels_batch = sess.run([image_batch, label_batch])
-                # for i in range(32):
-                #     images = train_images_batch[i]
-                #     h, w, c = images.shape
-                #     print(images.shape)
-                #     assert c == 1
-                #     # assert c == 3
-                #     images = images.reshape(h, w)
-                #     # images = images.resize((224, 224))
-                #     print(images)
-                #     plt.imshow(images)
-                #     print('label:', sess.run(label_batch[i]))
-                #     plt.show()
+                # Show images and labels
                 images = train_images_batch[0]
                 h, w, c = images.shape
-                #print(images.shape)
                 assert c == 1
                 images = images.reshape(h, w)
                 plt.imshow(images)
                 print(train_labels_batch[0])
                 plt.show()
-                #print(labels)
-
-        '''
-        coord = tf.train.Coordinator()
-        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-        step = 0
-        try:
-            while not coord.should_stop():
-                if step > 6:
-                    break
-                train_images_batch, train_labels_batch = sess.run([image_batch, label_batch])
-                for i in range(4):
-                    images = train_images_batch[i]
-                    h, w, c = images.shape
-                    print(images.shape)
-                    assert c == 1
-                    #assert c == 3
-                    images = images.reshape(h, w)
-                    #images = images.resize((224, 224))
-                    print(images)
-                    plt.imshow(images)
-                    print('label:', sess.run(label_batch[i]))
-                    plt.show()
-                step = step+1
-        except tf.errors.OutOfRangeError:
-            logger.info('==================Train Finished================')
-        finally:
-            coord.request_stop()
-        coord.join(threads)
-        '''
 
 def maketf():
     # 训练集所在目录
@@ -243,13 +198,9 @@ def maketf():
     if len(files) == 0:
         print('开始读图片并写入tfrecord文件中...........')
         image_list, label_list = get_files(dirpath)
-        # train_image_list, train_label_list = image_list[:40773],label_list[:40773]
-        # test_image_list,test_label_list = image_list[40773:],label_list[40773:]
-        #WriteTFRecord(train_image_list, train_label_list, dstpath='.', train_data=True)
-        #WriteTFRecord(test_image_list, test_label_list, dstpath='.', train_data=False)
         WriteTFRecord(image_list, label_list, dstpath='.', train_data=True)
         print('写入完毕！\n')
 
 if __name__ == '__main__':
-    #maketf()
-    testImage()
+    #maketf() #从png或jpg制作tfrecord
+    testImage() #解析tfrecord，验证准确性
