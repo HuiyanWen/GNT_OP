@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 
 slim = tf.contrib.slim
-
+flags = tf.app.flags
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 tf.app.flags.DEFINE_string('tfrecord_path', '../dataset/train/', "The number of pictures in every tfrecord.")
@@ -71,5 +71,10 @@ def testImage():
                 print("End of dataset")
                 break
 
-if __name__ == '__main__':
+    
+def main(_):
     testImage()
+
+
+if __name__ == '__main__':
+    tf.app.run()
